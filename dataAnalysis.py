@@ -19,7 +19,7 @@ def regressionPrice():
     df['price'] = pd.to_numeric(df['price'], errors='coerce')
     #df['price'] = df['price'].astype(float)
     df['p_price'] = df['price']/df['pyung']
-
+    df['result'] = 0
 
     #groupby로 집합 개수를 알 수 있는 함수 value_counts
     #print(df['location'].value_counts())
@@ -47,11 +47,15 @@ def regressionPrice():
     gangNam = ['강서구', '양천구', '구로구', '금천구', '영등포구', '관악구', '동작구', '서초구', '강남구', '송파구', '강동구']
     gangBook = ['마포구', '은평구', '서대문구', '종로구', '중구', '용산구', '강북구', '노원구', '성북구', '도봉구', '동대문구', '성동구', '광진구', '중랑구']
     #location, name, size로 group by하는데 max
-    temp = df[['location','name','size']]
-    #df.groupby(['location','name','size'])
+    #todo 원하는것만 가져올 때 df[['']]
+    temp = df[['location','name','pyung','buildY','result']]
 
-    print(temp.groupby(['location','name','size']))
-    #print(temp.T.loc[['location','name','size']])
+    value = input("값을 입력하세요")
+    for index,row in df.iterrows():
+        print(df.iloc[index,'location'])
+        if df.iloc[index,'location'] == df.iloc[index+1,'location']:
+            df.iloc[index,'result'] = 1
+            print(row)
 
 
 def titanic():
