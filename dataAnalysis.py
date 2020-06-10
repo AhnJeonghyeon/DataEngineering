@@ -48,14 +48,41 @@ def regressionPrice():
     gangBook = ['마포구', '은평구', '서대문구', '종로구', '중구', '용산구', '강북구', '노원구', '성북구', '도봉구', '동대문구', '성동구', '광진구', '중랑구']
     #location, name, size로 group by하는데 max
     #todo 원하는것만 가져올 때 df[['']]
-    temp = df[['location','name','pyung','buildY','result']]
+    temp = df[['location','name','pyung','buildY','result','price']]
+    temp2 = df[['location', 'name', 'pyung', 'buildY', 'result', 'price']]
 
     value = input("값을 입력하세요")
-    for index,row in df.iterrows():
-        print(df.iloc[index,'location'])
-        if df.iloc[index,'location'] == df.iloc[index+1,'location']:
-            df.iloc[index,'result'] = 1
-            print(row)
+    '''
+    1. location,name,pyung을 하나의 row로 만들어야한다
+        - groupby location, name, pyung, buildY, result ['price'].max()
+        하나더 만들어서 min()으로
+        둘의 len을 비교한 후 max-min값으로 재설정해준다 반복문 돌려서
+    2. 강남/강북여부를 결정해준다
+        -
+    3. 30평대 1/0을 결정해준다
+    4. 모델링 
+    '''
+    # temp = temp.groupby(['location','name','pyung','buildY','result'])['price'].max()
+    temp = pd.DataFrame(
+        {'price': temp.groupby(['location', 'name', 'pyung', 'buildY', 'result'])['price'].max()}).reset_index()
+    temp2 = pd.DataFrame(
+        {'price': temp2.groupby(['location', 'name', 'pyung', 'buildY', 'result'])['price'].min()}).reset_index()
+
+    temp['diff_price'] = temp['price'] - temp2['price']
+    print(temp)
+    temp['price'] = pd.to_numeric(temp['price'], errors='coerce')
+    temp['diff_price'] = pd.to_numeric(temp['diff_price'], errors='coerce')
+    for index, row in temp.iterrows():
+        if row['location'].split()[1] in gangNam:
+            temp.T.iloc[index]['location'] = '0'
+        elif row['location'].split()[1] in gangBook:
+            temp.T.iloc[index]['location'] = '1'
+        if row['pyung'] >= 30.0:
+            temp.T.iloc[index]['pyung'] = 1
+        else:
+            temp.T.iloc[index]['pyung'] = 0
+    print(temp)
+    # 데이터 가공 완료
 
 
 def titanic():
