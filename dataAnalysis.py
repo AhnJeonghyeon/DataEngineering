@@ -6,7 +6,8 @@ import numpy as np
 
 def regressionPrice():
     #todo 집값 예측 모듈 만들어야돼
-    df = pd.read_csv('/Users/AhnJeongHyeon/Documents/GitHub/RealEstate/Data/APT19.06~20.0530.csv')
+    #df = pd.read_csv('APT19.06~20.0530.csv')
+    df = pd.read_csv('test.csv')
     df.columns = ['location', 'fnum', 'num', 'semiNum', 'name', 'size', 'ym', 'd', 'price', 'floor', 'buildY',
                   'address']
     #평 평당 가격 추가
@@ -51,8 +52,11 @@ def regressionPrice():
     temp = df[['location','name','pyung','buildY','result','price']]
     temp2 = df[['location', 'name', 'pyung', 'buildY', 'result', 'price']]
 
-    value = input("값을 입력하세요")
+    value = int(input("값을 입력하세요"))
+
+
     '''
+    value이상 오를지 안오를지 판단하기
     1. location,name,pyung을 하나의 row로 만들어야한다
         - groupby location, name, pyung, buildY, result ['price'].max()
         하나더 만들어서 min()으로
@@ -67,22 +71,31 @@ def regressionPrice():
         {'price': temp.groupby(['location', 'name', 'pyung', 'buildY', 'result'])['price'].max()}).reset_index()
     temp2 = pd.DataFrame(
         {'price': temp2.groupby(['location', 'name', 'pyung', 'buildY', 'result'])['price'].min()}).reset_index()
+    #goupby를 df로 만듦
 
     temp['diff_price'] = temp['price'] - temp2['price']
-    print(temp)
+    print(temp[['location', 'pyung', 'diff_price', 'result']])
     temp['price'] = pd.to_numeric(temp['price'], errors='coerce')
     temp['diff_price'] = pd.to_numeric(temp['diff_price'], errors='coerce')
+    #이제 강남강북, 30평대를 확인하여 값을 세팅한다.
     for index, row in temp.iterrows():
         if row['location'].split()[1] in gangNam:
-            temp.T.iloc[index]['location'] = '0'
-        elif row['location'].split()[1] in gangBook:
-            temp.T.iloc[index]['location'] = '1'
-        if row['pyung'] >= 30.0:
-            temp.T.iloc[index]['pyung'] = 1
+            temp.loc[index,"location"] = 0
         else:
-            temp.T.iloc[index]['pyung'] = 0
-    print(temp)
+            temp.loc[index, "location"] = 1
+        if 30.0 <= row['pyung'] < 50:
+            temp.loc[index, "pyung"] = 1
+        else:
+            temp.loc[index, "pyung"] = 0
+        if row['diff_price'] >= value:
+            temp.loc[index, "result"] = 1
+        else:
+            temp.loc[index, "result"] = 0
+
+    print(temp[['location','pyung', 'diff_price','result']])
     # 데이터 가공 완료
+
+
 
 
 def titanic():
