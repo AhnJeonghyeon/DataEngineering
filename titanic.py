@@ -6,7 +6,7 @@ import numpy as np
 
 def titanic():
     # http://hleecaster.com/ml-logistic-regression-example/
-    passengers = pd.read_csv("titanic.csv")
+    passengers = pd.read_csv("Data/titanic.csv")
     print(passengers.shape)#개수 찍어보기
     print(passengers.head())
     print(passengers.columns)
