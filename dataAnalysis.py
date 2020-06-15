@@ -2,9 +2,12 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LinearRegression
 import numpy as np
+import matplotlib.pyplot as plt
+import datetime as dt
 
-def regressionPrice():
+def logisticRegressionPrice():
     #todo 집값 예측 모듈 만들어야돼
     df = pd.read_csv('Data/APT19.06~20.0530.csv')
 
@@ -12,9 +15,6 @@ def regressionPrice():
     df.columns = ['location', 'fnum', 'num', 'semiNum', 'name', 'size', 'ym', 'd', 'price', 'floor', 'buildY',
                   'address']
     #평 평당 가격 추가
-    #공백 제거
-    #df['price'].str.rstrip()
-    #df['price'].str.lstrip()
 
     #***자료형 변형
     df['pyung'] = df['size'] / (3.3)
@@ -22,9 +22,6 @@ def regressionPrice():
     #df['price'] = df['price'].astype(float)
     df['p_price'] = df['price']/df['pyung']
     df['result'] = 0
-
-    #groupby로 집합 개수를 알 수 있는 함수 value_counts
-    #print(df['location'].value_counts())
 
     #TODO regression
     '''
@@ -107,8 +104,8 @@ def regressionPrice():
     last = temp[['location', 'pyung', 'price', 'buildY','result']]
 
     #modeling
-    #features = last[['location','pyung','buildY','price']]
-    features = last[['location', 'pyung', 'price']]
+    features = last[['location','pyung','buildY','price']]
+    #features = last[['location', 'pyung', 'price']]
     result = last['result']
     train_features, test_features, train_labels, test_labels = train_test_split(features,result)
 
@@ -126,13 +123,107 @@ def regressionPrice():
 
     #test정보를 입력
     print("test start")
-    test = np.array([1,1.0,70000])
-    test2 = np.array([1,0.0,50000])
+    test = np.array([1,1.0,1995,70000])
+    test2 = np.array([1,0.0,1995,50000])
     sample = np.array([test,test2])
+    sample = scalar.fit_transform(sample)
     print(model.predict(sample))
     print(model.predict_proba(sample))
 
 
+def algebraRegressionPrice():
+    # todo 집값 예측 모듈 만들어야돼, linear, multi, polynomial정확성 비교해보자
+    #df = pd.read_csv('Data/test.csv')
+    df = pd.read_csv('Data/APT19.06~20.0530.csv')
+
+    df.columns = ['location', 'fnum', 'num', 'semiNum', 'name', 'size', 'ym', 'd', 'price', 'floor', 'buildY',
+                  'address']
+    # 평 평당 가격 추가
+
+    # ***자료형 변형
+    df['pyung'] = df['size'] / (3.3)
+    df['pyung'] = pd.to_numeric(df['pyung'], errors='coerce')
+    df['price'] = pd.to_numeric(df['price'], errors='coerce')
+
+    df['ym'] = pd.to_datetime(df['ym'], errors='coerce')
+    df['ym'] = df['ym'].dt.date
+    #df['ym'] = df['ym'].map(dt.datetime.toordinal)
+
+    # TODO regression
+    '''
+    algebra regression은 logistic과 다르게 데이터 자체를 잘라내는 작업이 필요하다
+    강남이면 근본데이터에서 강남만 남기는 방식으로
+    model에 들어가야 할 최적의 데이터만을 남겨놓고 그것을 이용해 predict하는 방식
+    
+       linear regression
+       1. 지역을 입력받는다, 그 지역으로 필터링한다.
+       2. 평수를 입력한다. 그 평수 +-5로 필터링한다 
+       3. buildY를 입력한다 그 연도 +-5로 필터링한다
+       4. 현재 집값을 입력한다. 집값이 0~5억인 경우 +-1억, 5~10 -> +-1.5, 10~ -> +-2
+       
+       x축은 시간(ym), y축은 집값(price)이다.
+       
+       결과) n년 뒤 집값을 예측한다.
+    '''
+
+    area, pyung, buildY, price = input("지역, 평수, 지어진 연도, 가격").split()
+    pyung = int(pyung)
+    buildY = int(buildY)
+    price = int(price)
+    temp = df[['location', 'pyung', 'buildY', 'price', 'ym']]
+
+    list=[]
+    for index, row in temp.iterrows():
+        if row['location'].split()[2] == area:
+            if pyung - 5 <= row['pyung']  <= pyung + 5 :
+                if buildY-5 <= row['buildY'] <= buildY + 5:
+                    if price < 50000:
+                        if price-10000 <= row['price'] <= price+10000:
+                            list.append(row)
+                    elif price < 100000:
+                        if price - 15000 <= row['price'] <= price + 15000:
+                            list.append(row)
+                    else:
+                        if price - 20000 <= row['price'] <= price + 20000:
+                            list.append(row)
+
+    last = pd.DataFrame(list)
+
+    #개포동 24 1984 150000
+    #하계동 33 1995 70000
+    #세로 2차원 리스트로 만들어야한다.
+    x = np.array(last.T.loc['ym']).reshape((-1,1))
+    y = np.array(last.T.loc['price'])
+
+    print(x)
+    print(y)
+    '''
+    scalar = StandardScaler()
+    x = scalar.fit_transform(x)
+    y = scalar.fit_transform(y)
+    print(x)
+    '''
+    linearModel = LinearRegression()
+    linearModel.fit(x,y)
+    r_sq = linearModel.score(x,y)
+    print(r_sq)
+    print(linearModel)
+    y_pred = linearModel.predict([[201912],[202003]])
+    #todo ym을 date로 바꿔야한다. 안그러니까 10진수로 생각함
+    print(y_pred)
+    visualization(x,y,linearModel)
+
+
+def visualization(x, y, model):
+    plt.scatter(x, y, color="red")
+    #plt.plot(x, model.predict([[201912],[202003]]), color="green")
+    plt.title("housing value (Training set)")
+    plt.xlabel("ym")
+    plt.ylabel("price")
+    plt.show()
+
+
 if __name__ == "__main__":
     print("main")
-    regressionPrice()
+    #logisticRegressionPrice()
+    algebraRegressionPrice()
