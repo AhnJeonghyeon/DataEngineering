@@ -3,6 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
@@ -145,10 +146,14 @@ def algebraRegressionPrice():
     df['pyung'] = pd.to_numeric(df['pyung'], errors='coerce')
     df['price'] = pd.to_numeric(df['price'], errors='coerce')
 
-    df['ym'] = pd.to_datetime(df['ym'], errors='coerce')
-    df['ym'] = df['ym'].dt.date
-    #df['ym'] = df['ym'].map(dt.datetime.toordinal)
-
+    #전체 y,m,d로 나눈다. (현재연도2020 - df['y'])*12 * -1 +
+    # - (현재월 - df['m'])
+    sys_y = 2020
+    sys_m = 6
+    df['y'] = (df['ym']/100)
+    df['y'] = df['y'].astype(int)
+    df['m'] = df['ym']%100
+    df['ym'] = (sys_y-df['y'])*-12 - (sys_m-df['m'])
     # TODO regression
     '''
     algebra regression은 logistic과 다르게 데이터 자체를 잘라내는 작업이 필요하다
@@ -181,7 +186,7 @@ def algebraRegressionPrice():
                         if price-10000 <= row['price'] <= price+10000:
                             list.append(row)
                     elif price < 100000:
-                        if price - 15000 <= row['price'] <= price + 15000:
+                        if price - 10000 <= row['price'] <= price + 10000:
                             list.append(row)
                     else:
                         if price - 20000 <= row['price'] <= price + 20000:
@@ -195,28 +200,41 @@ def algebraRegressionPrice():
     x = np.array(last.T.loc['ym']).reshape((-1,1))
     y = np.array(last.T.loc['price'])
 
-    print(x)
-    print(y)
+    print(last)
     '''
     scalar = StandardScaler()
     x = scalar.fit_transform(x)
     y = scalar.fit_transform(y)
     print(x)
     '''
+
     linearModel = LinearRegression()
     linearModel.fit(x,y)
     r_sq = linearModel.score(x,y)
     print(r_sq)
     print(linearModel)
-    y_pred = linearModel.predict([[201912],[202003]])
-    #todo ym을 date로 바꿔야한다. 안그러니까 10진수로 생각함
+    y_pred = linearModel.predict([[1],[2]])
+
     print(y_pred)
     visualization(x,y,linearModel)
+######################################polynomial Regression
+    transformer = PolynomialFeatures(degree = 2, include_bias = False)
+    transformer.fit(x)
+    x_ = transformer.transform(x)
+    print(x_)
+
+    polynomialModel = LinearRegression().fit(x_,y)
+    r_sq =polynomialModel.score(x_,y)
+    print(r_sq)
+
+    y_pred = polynomialModel.predict([[1],[2]])
+    print(y_pred)
+
 
 
 def visualization(x, y, model):
     plt.scatter(x, y, color="red")
-    #plt.plot(x, model.predict([[201912],[202003]]), color="green")
+    #plt.plot(x, model.predict([[201912]]), color="green")
     plt.title("housing value (Training set)")
     plt.xlabel("ym")
     plt.ylabel("price")
